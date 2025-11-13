@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:22.04 AS build
+
+# 1) Install OS deps
+RUN dpkg apt-get update && \
+    apt-get install -y \
+        curl wget zip unzip make gcc g++ python3 \
+        mingw-w64 \
+        libssl-dev pkg-config \
+        llvm lld \
+        nsis \
+        wine wine32 \
+        ca-certificates \
+        build-essential \
+        software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2) Install Rust
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# 3) Add Windows target (GNU)
+RUN rustup target add x86_64-pc-windows-gnu
+
+ENV CARGO_TARGET=x86_64-pc-windows-gnu
+ENV RUSTFLAGS="-C target-feature=+crt-static"
+
+# 4) Install node + pnpm
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g pnpm
+
+# 5) Tauri build
+WORKDIR /app
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+RUN pnpm install
+COPY . .
+
+RUN pnpm tauri build --target x86_64-pc-windows-gnu

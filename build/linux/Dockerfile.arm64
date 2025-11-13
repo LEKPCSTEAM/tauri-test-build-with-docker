@@ -1,0 +1,20 @@
+FROM --platform=linux/arm64 rust:bullseye
+
+RUN apt-get update && apt-get install -y \
+    libgtk-3-dev \
+    libayatana-appindicator3-dev \
+    librsvg2-dev \
+    libssl-dev \
+    curl wget file ca-certificates \
+    build-essential pkg-config \
+    libwebkit2gtk-4.1-dev || apt-get install -y libwebkit2gtk-4.0-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+ && apt-get update && apt-get install -y nodejs \
+ && npm i -g pnpm@8
+
+RUN cargo install tauri-cli && rustup target add aarch64-unknown-linux-gnu
+
+WORKDIR /app
+CMD ["bash", "-lc", "pnpm i && pnpm -C src build || pnpm build && cargo tauri build --target aarch64-unknown-linux-gnu"]

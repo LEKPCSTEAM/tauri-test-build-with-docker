@@ -1,0 +1,87 @@
+services:
+  build-linux-amd64:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./build/linux/Dockerfile.amd64
+    working_dir: /app
+    volumes:
+      - .:/app
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - node-cache:/root/.pnpm-store
+    environment:
+      TAURI_PRIVATE_KEY: ${TAURI_PRIVATE_KEY}
+      TAURI_KEY_PASSWORD: ${TAURI_KEY_PASSWORD}
+    command: >
+      bash -lc "set -euo pipefail &&
+                pnpm install --frozen-lockfile=false &&
+                pnpm run build &&
+                cargo tauri build --target x86_64-unknown-linux-gnu &&
+                mkdir -p /app/.artifacts/linux-amd64 &&
+                cp -R /cargo-target/x86_64-unknown-linux-gnu/release/bundle /app/.artifacts/linux-amd64 &&
+                echo 'OUTPUT PATH: .artifacts/linux-amd64/bundle'"
+
+  build-linux-arm64:
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: ./build/linux/Dockerfile.arm64
+    working_dir: /app
+    volumes:
+      - .:/app
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+      - node-cache:/root/.pnpm-store
+    environment:
+      TAURI_PRIVATE_KEY: ${TAURI_PRIVATE_KEY}
+      TAURI_KEY_PASSWORD: ${TAURI_KEY_PASSWORD}
+    command: >
+      bash -lc "set -euo pipefail &&
+                pnpm install --frozen-lockfile=false &&
+                pnpm run build &&
+                cargo tauri build --target aarch64-unknown-linux-gnu &&
+                mkdir -p /app/.artifacts/linux-arm64 &&
+                cp -R /app/src-tauri/target/aarch64-unknown-linux-gnu/release/bundle /app/.artifacts/linux-arm64 &&
+                echo 'OUTPUT PATH: .artifacts/linux-arm64/bundle'"
+
+  build-win64:
+    build:
+      context: .
+      dockerfile: ./build/windows/Dockerfile.win64
+    container_name: tauri-build-win64
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PLATFORM=win64
+    command: >
+      bash -lc "set -euo pipefail &&
+                pnpm install &&
+                pnpm tauri build --target x86_64-pc-windows-gnu &&
+                mkdir -p /app/.artifacts/win64 &&
+                cp -R /app/src-tauri/target/x86_64-pc-windows-gnu/release /app/.artifacts/win64 &&
+                echo 'OUTPUT PATH: .artifacts/win64/release'"
+
+  build-win32:
+    build:
+      context: .
+      dockerfile: ./build/windows/Dockerfile.win32
+    container_name: tauri-build-win32
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PLATFORM=win32
+    command: >
+      bash -lc "set -euo pipefail &&
+                pnpm install &&
+                pnpm tauri build --target i686-pc-windows-gnu &&
+                mkdir -p /app/.artifacts/win32 &&
+                cp -R /app/src-tauri/target/i686-pc-windows-gnu/release /app/.artifacts/win32 &&
+                echo 'OUTPUT PATH: .artifacts/win32/release'"
+
+volumes:
+  cargo-registry:
+  cargo-git:
+  node-cache:
