@@ -1,112 +1,82 @@
-# Tauri 2 Multi-Platform Build System (Linux + Windows 32/64)
+# Tauri Multi-Platform Docker Build System
 
-This repository contains a Docker-based build system designed to compile a Tauri application for the following platforms:
+This repository provides a Docker-based build environment for compiling Tauri applications across multiple platforms. It ensures a consistent build environment and eliminates the need for manual dependency management on the host machine.
 
-- Linux AMD64 (x86_64)
-- Linux ARM64 (aarch64)
-- Windows 64-bit (x86_64-pc-windows-gnu)
-- Windows 32-bit (i686-pc-windows-gnu)
+## Supported Platforms
 
-All builds run inside Docker containers, ensuring a reproducible and consistent environment across all hosts.
+*   **Linux AMD64** (x86_64)
+*   **Linux ARM64** (aarch64) - Uses cross-compilation
+*   **Windows 64-bit** (x86_64-pc-windows-gnu)
+*   **Windows 32-bit** (i686-pc-windows-gnu)
 
-Build artifacts are exported to:
+## Prerequisites
 
-```
-.artifacts/<platform>/
-```
+*   Docker
+*   Docker Compose
 
----
+## Project Structure
 
-# Project Structure
+*   `build/`: Contains Dockerfiles for each platform.
+*   `docker-compose.yml`: Defines the build services and configurations.
+*   `src-tauri/`: Your Tauri application source code.
+*   `.artifacts/`: Directory where build artifacts are exported.
 
-```
-project/
-│
-├─ build/
-│   ├─ linux/
-│   │   ├─ Dockerfile.amd64
-│   │   └─ Dockerfile.arm64
-│   └─ windows/
-│       ├─ Dockerfile.win64
-│       └─ Dockerfile.win32
-│
-├─ src-tauri/
-├─ .artifacts/
-│   ├─ linux-amd64/
-│   ├─ linux-arm64/
-│   ├─ win32/
-│   └─ win64/
-│
-├─ docker-compose.yml
-└─ README.mdBuild Commands
-```
+## Usage
 
----
+To build the application, run the corresponding Docker Compose service. The source code is mounted into the container, and the build artifacts are copied back to the host.
 
-## 1. Build for Linux AMD64
+### 1. Build for Linux AMD64
 
-```
+```bash
 docker compose up --build build-linux-amd64
 ```
 
-Output directory:
+**Output:** `.artifacts/linux-amd64/`
 
-```
-.artifacts/linux-amd64/bundle/
-```
+### 2. Build for Linux ARM64
 
----
+This uses a cross-compilation environment (Ubuntu AMD64 base with ARM64 toolchain) to ensure stability and performance.
 
-## 2. Build for Linux ARM64
-
-```
+```bash
 docker compose up --build build-linux-arm64
 ```
 
-Output directory:
+**Output:** `.artifacts/linux-arm64/`
 
-```
-.artifacts/linux-arm64/bundle/
+### 3. Build for Windows 64-bit
 
-```
-
----
-
-## 3. Build for Windows 64-bit (x86_64-pc-windows-gnu)
-
-```
+```bash
 docker compose up --build build-win64
 ```
 
-Output directory:
+**Output:** `.artifacts/win64/`
 
-```
-.artifacts/win64/release/
-```
+### 4. Build for Windows 32-bit
 
----
-
-## 4. Build for Windows 32-bit (i686-pc-windows-gnu)
-
-```
+```bash
 docker compose up --build build-win32
 ```
 
-Output directory:
+**Output:** `.artifacts/win32/`
 
-```
-.artifacts/win32/release/
-```
+## Configuration
 
----
+### Environment Variables
 
-# Output Locations
+You can configure environment variables in `docker-compose.yml` or use a `.env` file.
 
-All build outputs are exported to the `.artifacts` directory:
+*   `TAURI_PRIVATE_KEY`: Path or content of the private key for signing.
+*   `TAURI_KEY_PASSWORD`: Password for the private key.
 
-| Platform | Path |
-| --- | --- |
-| Linux AMD64 | `.artifacts/linux-amd64/bundle/` |
-| Linux ARM64 | `.artifacts/linux-arm64/bundle/` |
-| Windows 64-bit | `.artifacts/win64/release/` |
-| Windows 32-bit | `.artifacts/win32/release/` |
+### Customization
+
+To use this template for your project:
+
+1.  Place your Tauri project in the root directory (ensure `src-tauri` exists).
+2.  Update `docker-compose.yml` if you need to change image names or build arguments.
+3.  Modify the `Dockerfile`s in `build/` if you require additional system dependencies.
+
+## Troubleshooting
+
+*   **Linux ARM64 Bundling**: AppImage generation is currently disabled for ARM64 builds due to Docker limitations. Only `deb` and `rpm` packages are generated.
+*   **Windows Builds**: Ensure `wine` is correctly configured if you encounter runtime issues during the build process (handled automatically by the Dockerfile).
