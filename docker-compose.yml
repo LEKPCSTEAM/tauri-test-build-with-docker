@@ -14,13 +14,16 @@ services:
       TAURI_PRIVATE_KEY: ${TAURI_PRIVATE_KEY}
       TAURI_KEY_PASSWORD: ${TAURI_KEY_PASSWORD}
     command: >
-      bash -lc "set -euo pipefail &&
-                pnpm install --frozen-lockfile=false &&
-                pnpm run build &&
-                cargo tauri build --target x86_64-unknown-linux-gnu &&
-                mkdir -p /app/.artifacts/linux-amd64 &&
-                cp -R /cargo-target/x86_64-unknown-linux-gnu/release/bundle /app/.artifacts/linux-amd64 &&
-                echo 'OUTPUT PATH: .artifacts/linux-amd64/bundle'"
+      bash -lc "
+        set -euo pipefail &&
+        export PATH=/usr/local/cargo/bin:/usr/local/bin:/usr/bin:/bin:/sbin &&
+        pnpm install --frozen-lockfile=false &&
+        pnpm run build &&
+        cargo tauri build --target x86_64-unknown-linux-gnu &&
+        mkdir -p /app/.artifacts/linux-amd64 &&
+        cp -R /app/src-tauri/target/x86_64-unknown-linux-gnu/release /app/.artifacts/linux-amd64 &&
+        echo 'OUTPUT PATH: .artifacts/linux-amd64'
+      "
 
   build-linux-arm64:
     platform: linux/arm64
@@ -36,14 +39,18 @@ services:
     environment:
       TAURI_PRIVATE_KEY: ${TAURI_PRIVATE_KEY}
       TAURI_KEY_PASSWORD: ${TAURI_KEY_PASSWORD}
+      APPIMAGE_EXTRACT_AND_RUN: 1
     command: >
-      bash -lc "set -euo pipefail &&
-                pnpm install --frozen-lockfile=false &&
-                pnpm run build &&
-                cargo tauri build --target aarch64-unknown-linux-gnu &&
-                mkdir -p /app/.artifacts/linux-arm64 &&
-                cp -R /app/src-tauri/target/aarch64-unknown-linux-gnu/release/bundle /app/.artifacts/linux-arm64 &&
-                echo 'OUTPUT PATH: .artifacts/linux-arm64/bundle'"
+      bash -lc "
+        set -euo pipefail &&
+        export PATH=/root/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/sbin &&
+        pnpm install --frozen-lockfile=false &&
+        pnpm run build &&
+        cargo tauri build --target aarch64-unknown-linux-gnu --bundles deb,rpm &&
+        mkdir -p /app/.artifacts/linux-arm64 &&
+        cp -R /app/src-tauri/target/aarch64-unknown-linux-gnu/release /app/.artifacts/linux-arm64 &&
+        echo 'OUTPUT PATH: .artifacts/linux-arm64'
+      "
 
   build-win64:
     build:
@@ -56,12 +63,15 @@ services:
     environment:
       - PLATFORM=win64
     command: >
-      bash -lc "set -euo pipefail &&
-                pnpm install &&
-                pnpm tauri build --target x86_64-pc-windows-gnu &&
-                mkdir -p /app/.artifacts/win64 &&
-                cp -R /app/src-tauri/target/x86_64-pc-windows-gnu/release /app/.artifacts/win64 &&
-                echo 'OUTPUT PATH: .artifacts/win64/release'"
+      bash -lc "
+        set -euo pipefail &&
+        export PATH=/root/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/sbin &&
+        pnpm install &&
+        pnpm tauri build --target x86_64-pc-windows-gnu &&
+        mkdir -p /app/.artifacts/win64 &&
+        cp -R /app/src-tauri/target/x86_64-pc-windows-gnu/release /app/.artifacts/win64 &&
+        echo 'OUTPUT PATH: .artifacts/win64/release'
+      "
 
   build-win32:
     build:
@@ -74,12 +84,15 @@ services:
     environment:
       - PLATFORM=win32
     command: >
-      bash -lc "set -euo pipefail &&
-                pnpm install &&
-                pnpm tauri build --target i686-pc-windows-gnu &&
-                mkdir -p /app/.artifacts/win32 &&
-                cp -R /app/src-tauri/target/i686-pc-windows-gnu/release /app/.artifacts/win32 &&
-                echo 'OUTPUT PATH: .artifacts/win32/release'"
+      bash -lc "
+        set -euo pipefail &&
+        export PATH=/root/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/sbin &&
+        pnpm install &&
+        pnpm tauri build --target i686-pc-windows-gnu &&
+        mkdir -p /app/.artifacts/win32 &&
+        cp -R /app/src-tauri/target/i686-pc-windows-gnu/release /app/.artifacts/win32 &&
+        echo 'OUTPUT PATH: .artifacts/win32/release'
+      "
 
 volumes:
   cargo-registry:
